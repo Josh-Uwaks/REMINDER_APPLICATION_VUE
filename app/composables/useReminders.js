@@ -5,6 +5,7 @@ import apiClient from '~/api/client'
 export const useReminders = () => {
   const reminders = ref([])
   const loading = ref(false)
+  const sendingSms = ref(false)
   const error = ref(null)
 
   const fetchReminders = async (filter = null) => {
@@ -31,7 +32,16 @@ export const useReminders = () => {
     try {
       const response = await apiClient.post('/reminders', reminderData)
       reminders.value.push(response.data.data)
-      return { success: true, data: response.data.data }
+      
+      // Check if SMS was sent
+      const smsSent = response.data.message?.includes('SMS notification sent')
+      
+      return { 
+        success: true, 
+        data: response.data.data,
+        smsSent: smsSent,
+        message: response.data.message
+      }
     } catch (err) {
       error.value = err.response?.data?.message || 'Failed to create reminder'
       return { success: false, error: error.value }
@@ -94,14 +104,95 @@ export const useReminders = () => {
     }
   }
 
+  // @desc    Send SMS notification for a reminder
+  // @route   POST /api/reminders/:id/send-sms
+  const sendSmsNotification = async (id) => {
+    sendingSms.value = true
+    error.value = null
+    
+    try {
+      const response = await apiClient.post(`/reminders/${id}/send-sms`)
+      
+      // Update the reminder's notified status
+      const index = reminders.value.findIndex(r => r._id === id)
+      if (index !== -1) {
+        reminders.value[index] = {
+          ...reminders.value[index],
+          notified: true
+        }
+      }
+      
+      return { 
+        success: true, 
+        message: 'SMS sent successfully',
+        data: response.data.data
+      }
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to send SMS notification'
+      return { 
+        success: false, 
+        error: error.value,
+        code: err.response?.data?.code
+      }
+    } finally {
+      sendingSms.value = false
+    }
+  }
+
+  // @desc    Send test SMS
+  // @route   POST /api/reminders/test-sms
+  const sendTestSms = async (phoneNumber, message = null) => {
+    sendingSms.value = true
+    error.value = null
+    
+    try {
+      const response = await apiClient.post('/reminders/test-sms', {
+        phoneNumber,
+        message: message || 'Test message from RemindMe - Your reminder system is working!'
+      })
+      
+      return { 
+        success: true, 
+        message: 'Test SMS sent successfully',
+        data: response.data.data
+      }
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to send test SMS'
+      return { 
+        success: false, 
+        error: error.value,
+        code: err.response?.data?.code
+      }
+    } finally {
+      sendingSms.value = false
+    }
+  }
+
+  // @desc    Check if a reminder has SMS capability
+  const hasSmsCapability = (reminder) => {
+    return reminder && 
+           reminder.phone && 
+           (reminder.notificationMode === 'sms' || reminder.notificationMode === 'both')
+  }
+
+  // @desc    Check if SMS was sent for a reminder
+  const isSmsSent = (reminder) => {
+    return reminder && reminder.notified === true
+  }
+
   return {
     reminders,
     loading,
+    sendingSms,
     error,
     fetchReminders,
     createReminder,
     updateReminder,
     deleteReminder,
     toggleComplete,
+    sendSmsNotification,
+    sendTestSms,
+    hasSmsCapability,
+    isSmsSent,
   }
 }
