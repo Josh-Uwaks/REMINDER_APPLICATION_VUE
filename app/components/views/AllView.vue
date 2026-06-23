@@ -1,4 +1,4 @@
-<!-- reminder/app/components/views/AllView.vue -->
+<!-- app/components/views/AllView.vue -->
 <template>
   <div class="view-section">
     <div class="view-header">
@@ -52,6 +52,13 @@
               <span class="meta-badge" :class="reminder.notificationMode">
                 {{ getNotificationIcon(reminder.notificationMode) }}
               </span>
+              <span 
+                v-if="hasSmsCapability(reminder)" 
+                class="meta-badge sms-status"
+                :class="{ 'sent': reminder.notified }"
+              >
+                {{ reminder.notified ? '📱 Sent' : '📱 Pending' }}
+              </span>
             </div>
             <div class="card-contact" v-if="reminder.email || reminder.phone">
               <span v-if="reminder.email" class="contact-item">
@@ -64,7 +71,18 @@
           </div>
         </div>
         <div class="card-actions">
-          <button @click="$emit('edit', reminder)" class="action-btn" title="Edit">
+          <button 
+            v-if="hasSmsCapability(reminder) && !reminder.notified"
+            @click="$emit('send-sms', reminder._id)" 
+            class="action-btn sms-btn" 
+            title="Send SMS Notification"
+            :disabled="sendingSms"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button @click="$emit('edit', reminder)" class="action-btn edit-btn" title="Edit">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M17 3L21 7L7 21H3V17L17 3Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -97,10 +115,14 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  sendingSms: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['refresh', 'edit', 'delete', 'toggle'])
+const emit = defineEmits(['refresh', 'edit', 'delete', 'toggle', 'send-sms'])
 
 const activeFilter = ref('all')
 
@@ -140,6 +162,12 @@ const formatFullDate = (datetime) => {
 const getNotificationIcon = (mode) => {
   const icons = { email: '📧', sms: '📱', both: '💌', browser: '🔔' }
   return icons[mode] || '🔔'
+}
+
+const hasSmsCapability = (reminder) => {
+  return reminder && 
+         reminder.phone && 
+         (reminder.notificationMode === 'sms' || reminder.notificationMode === 'both')
 }
 </script>
 
@@ -379,6 +407,16 @@ const getNotificationIcon = (mode) => {
   color: #10B981;
 }
 
+.sms-status {
+  background: #EFF6FF;
+  color: #3B82F6;
+}
+
+.sms-status.sent {
+  background: #D1FAE5;
+  color: #059669;
+}
+
 .card-contact {
   display: flex;
   gap: 12px;
@@ -413,14 +451,31 @@ const getNotificationIcon = (mode) => {
   transition: all 0.2s;
 }
 
-.action-btn:hover {
+.action-btn:hover:not(:disabled) {
   background: #F1F5F9;
+}
+
+.edit-btn:hover:not(:disabled) {
   color: #3B82F6;
 }
 
-.action-btn.delete-btn:hover {
+.delete-btn:hover:not(:disabled) {
   background: #FEF2F2;
   color: #EF4444;
+}
+
+.sms-btn {
+  color: #3B82F6;
+}
+
+.sms-btn:hover:not(:disabled) {
+  background: #EFF6FF;
+  color: #2563EB;
+}
+
+.sms-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .empty-state {

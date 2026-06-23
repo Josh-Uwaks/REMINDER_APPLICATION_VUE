@@ -1,4 +1,4 @@
-<!-- components/views/UpcomingView.vue -->
+<!-- app/components/views/UpcomingView.vue -->
 <template>
   <div class="view-section">
     <div class="view-header">

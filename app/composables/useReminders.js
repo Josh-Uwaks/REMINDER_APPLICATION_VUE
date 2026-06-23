@@ -34,7 +34,7 @@ export const useReminders = () => {
       reminders.value.push(response.data.data)
       
       // Check if SMS was sent
-      const smsSent = response.data.message?.includes('SMS notification sent')
+      const smsSent = response.data.smsSent || false
       
       return { 
         success: true, 
@@ -139,35 +139,6 @@ export const useReminders = () => {
     }
   }
 
-  // @desc    Send test SMS
-  // @route   POST /api/reminders/test-sms
-  const sendTestSms = async (phoneNumber, message = null) => {
-    sendingSms.value = true
-    error.value = null
-    
-    try {
-      const response = await apiClient.post('/reminders/test-sms', {
-        phoneNumber,
-        message: message || 'Test message from RemindMe - Your reminder system is working!'
-      })
-      
-      return { 
-        success: true, 
-        message: 'Test SMS sent successfully',
-        data: response.data.data
-      }
-    } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to send test SMS'
-      return { 
-        success: false, 
-        error: error.value,
-        code: err.response?.data?.code
-      }
-    } finally {
-      sendingSms.value = false
-    }
-  }
-
   // @desc    Check if a reminder has SMS capability
   const hasSmsCapability = (reminder) => {
     return reminder && 
@@ -191,7 +162,6 @@ export const useReminders = () => {
     deleteReminder,
     toggleComplete,
     sendSmsNotification,
-    sendTestSms,
     hasSmsCapability,
     isSmsSent,
   }
