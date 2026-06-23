@@ -418,6 +418,49 @@ const showToast = (message, type = 'success', icon = '✅') => {
   }, 5000)
 }
 
+// ⭐ TIMEZONE UTILITY FUNCTIONS
+/**
+ * Convert local datetime string to UTC ISO string
+ * @param {string} localDateTimeString - Format: "YYYY-MM-DDTHH:mm"
+ * @returns {string} - UTC ISO string
+ */
+const localToUTC = (localDateTimeString) => {
+  if (!localDateTimeString) return null;
+  
+  const localDate = new Date(localDateTimeString);
+  const timezoneOffset = localDate.getTimezoneOffset();
+  const utcDate = new Date(localDate.getTime() - timezoneOffset * 60000);
+  return utcDate.toISOString();
+}
+
+/**
+ * Convert UTC ISO string to local datetime string for input
+ * @param {string} utcString - UTC ISO string
+ * @returns {string} - Local datetime string (YYYY-MM-DDTHH:mm)
+ */
+const utcToLocal = (utcString) => {
+  if (!utcString) return null;
+  
+  const utcDate = new Date(utcString);
+  const timezoneOffset = utcDate.getTimezoneOffset();
+  const localDate = new Date(utcDate.getTime() - timezoneOffset * 60000);
+  return localDate.toISOString().slice(0, 16);
+}
+
+/**
+ * Get current local datetime for input
+ * @returns {string} - Local datetime string (YYYY-MM-DDTHH:mm)
+ */
+const getCurrentLocalDateTime = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 // Methods
 const changeView = async (view) => {
   if (currentView.value === view) return
@@ -465,6 +508,7 @@ const getNotificationLabel = (mode) => {
   return labels[mode] || 'Browser'
 }
 
+// ⭐ UPDATED: Add reminder with proper timezone handling
 const addReminder = async () => {
   if (!newTitle.value.trim() || !newDateTime.value) {
     showToast('Please enter a title and date/time', 'error', '❌')
@@ -483,9 +527,16 @@ const addReminder = async () => {
   
   creatingReminder.value = true
   
+  // ⭐ Convert local datetime to UTC
+  const utcDateTime = localToUTC(newDateTime.value);
+  
+  console.log('📅 Local datetime:', newDateTime.value);
+  console.log('📅 UTC datetime:', utcDateTime);
+  console.log('📅 Timezone offset:', new Date().getTimezoneOffset(), 'minutes');
+  
   const reminderData = {
     title: newTitle.value,
-    datetime: newDateTime.value,
+    datetime: utcDateTime,
     priority: newPriority.value,
     notificationMode: newNotificationMode.value,
     email: (newNotificationMode.value === 'email' || newNotificationMode.value === 'both') ? newEmail.value : null,
@@ -505,7 +556,7 @@ const addReminder = async () => {
     await refreshView()
     
     if (result.smsSent) {
-      showToast('✅ Reminder created! SMS notification sent.', 'success', '📱')
+      showToast('✅ Reminder created! SMS will be sent at the scheduled time.', 'success', '📱')
     } else {
       showToast('✅ Reminder created successfully!', 'success', '✅')
     }
@@ -545,20 +596,28 @@ const handleSendSms = async (id) => {
   }
 }
 
+// ⭐ UPDATED: Edit reminder with proper timezone handling
 const editReminder = (reminder) => {
-  const formattedDateTime = new Date(reminder.datetime).toISOString().slice(0, 16)
+  // Convert UTC to local time for display
+  const localDateTime = utcToLocal(reminder.datetime);
+  
   editingReminder.value = { 
     ...reminder,
-    datetime: formattedDateTime
+    datetime: localDateTime
   }
   showEditModal.value = true
 }
 
+// ⭐ UPDATED: Save edit with proper timezone handling
 const saveEdit = async () => {
   savingEdit.value = true
+  
+  // Convert local datetime to UTC
+  const utcDateTime = localToUTC(editingReminder.value.datetime);
+  
   const result = await updateReminder(editingReminder.value._id, {
     title: editingReminder.value.title,
-    datetime: editingReminder.value.datetime,
+    datetime: utcDateTime,
     priority: editingReminder.value.priority,
     notificationMode: editingReminder.value.notificationMode,
     email: editingReminder.value.email,
@@ -607,12 +666,21 @@ const formatFullDate = (datetime) => {
   })
 }
 
+// ⭐ UPDATED: Set default datetime with proper timezone handling
 const setDefaultDateTime = () => {
   if (!newDateTime.value) {
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
-    tomorrow.setHours(9, 0, 0)
-    newDateTime.value = tomorrow.toISOString().slice(0, 16)
+    tomorrow.setHours(9, 0, 0, 0)
+    
+    // Format for datetime-local input (local time)
+    const year = tomorrow.getFullYear();
+    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const day = String(tomorrow.getDate()).padStart(2, '0');
+    const hours = String(tomorrow.getHours()).padStart(2, '0');
+    const minutes = String(tomorrow.getMinutes()).padStart(2, '0');
+    
+    newDateTime.value = `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 }
 
