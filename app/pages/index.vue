@@ -139,7 +139,7 @@
           <div v-if="newNotificationMode === 'sms' || newNotificationMode === 'both'" class="form-row">
             <div class="form-group full-width">
               <label class="form-label">Phone number</label>
-              <input v-model="newPhone" type="tel" placeholder="+234 812 121 1212" class="form-input" />
+              <input v-model="newPhone" type="tel" placeholder="+234 803 203 4293" class="form-input" />
               <small class="form-hint">Format: +234 80X XXX XXXX</small>
             </div>
           </div>
@@ -520,7 +520,6 @@ const handleSendSms = async (id) => {
   }
 }
 
-// ⭐ NEW: Handle sending email
 const handleSendEmail = async (id) => {
   const result = await sendEmailNotification(id)
   if (result.success) {
@@ -616,7 +615,6 @@ onMounted(async () => {
     Notification.requestPermission()
   }
 
-  // Auto-refresh every 60 seconds
   refreshInterval = setInterval(async () => {
     if (!viewLoading.value && !creatingReminder.value && !savingEdit.value) {
       console.log('🔄 Auto-refreshing data...')
@@ -1054,27 +1052,34 @@ onBeforeUnmount(() => {
 /* ===== Modal ===== */
 .modal-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
 }
 
 .modal-container {
-  background: var(--surface);
+  background: #FFFFFF;
   border-radius: 16px;
-  width: 90%;
+  width: 100%;
   max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
   border-top: 3px solid #3B82F6;
   animation: slideUp 0.22s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes slideUp {
-  from { transform: translateY(14px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 .modal-header {
@@ -1082,7 +1087,9 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   align-items: flex-start;
   padding: 22px 26px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line, #E2E8F0);
+  background: #FFFFFF;
+  border-radius: 16px 16px 0 0;
 }
 
 .modal-eyebrow {
@@ -1099,46 +1106,62 @@ onBeforeUnmount(() => {
   font-family: 'Sora', sans-serif;
   font-size: 16px;
   font-weight: 600;
-  color: var(--ink);
+  color: #1E293B;
   max-width: 360px;
+  margin: 0;
 }
 
 .modal-close {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--ink-soft);
+  color: #64748B;
   padding: 4px;
   border-radius: 8px;
   transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.modal-close:hover { background: var(--paper); }
+.modal-close:hover {
+  background: #F8FAFC;
+}
 
-.modal-body { padding: 22px 26px; }
+.modal-body {
+  padding: 22px 26px;
+  background: #FFFFFF;
+}
 
-.modal-field { margin-bottom: 16px; }
-.modal-field:last-child { margin-bottom: 0; }
+.modal-field {
+  margin-bottom: 16px;
+}
+
+.modal-field:last-child {
+  margin-bottom: 0;
+}
 
 .modal-field label {
   display: block;
   margin-bottom: 6px;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--ink-soft);
+  color: #64748B;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
-.modal-field input, .modal-field select, .modal-field textarea {
+.modal-field input,
+.modal-field select,
+.modal-field textarea {
   width: 100%;
   padding: 10px 13px;
-  border: 1.5px solid var(--line);
+  border: 1.5px solid #E2E8F0;
   border-radius: 10px;
   font-family: 'Inter', sans-serif;
   font-size: 14px;
-  background: var(--paper);
-  color: var(--ink);
+  background: #F8FAFC;
+  color: #1E293B;
   transition: border-color 0.15s;
 }
 
@@ -1149,19 +1172,31 @@ onBeforeUnmount(() => {
   line-height: 1.5;
 }
 
-.modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus {
+.modal-field input:focus,
+.modal-field select:focus,
+.modal-field textarea:focus {
   outline: none;
   border-color: #3B82F6;
-  background: var(--surface);
+  background: #FFFFFF;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+}
+
+.modal-field .char-count {
+  font-size: 11px;
+  color: #64748B;
+  text-align: right;
+  opacity: 0.6;
+  margin-top: 2px;
 }
 
 .modal-footer {
   padding: 16px 26px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid #E2E8F0;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  background: #FFFFFF;
+  border-radius: 0 0 16px 16px;
 }
 
 .btn {
@@ -1175,16 +1210,29 @@ onBeforeUnmount(() => {
   font-family: 'Inter', sans-serif;
 }
 
-.btn-secondary { 
-  background: var(--paper); 
-  color: var(--ink-soft); 
-  border: 1.5px solid var(--line); 
+.btn-secondary {
+  background: #F8FAFC;
+  color: #64748B;
+  border: 1.5px solid #E2E8F0;
 }
-.btn-secondary:hover { background: var(--line); }
 
-.btn-primary { background: var(--navy); color: #FFFFFF; }
-.btn-primary:hover:not(:disabled) { background: var(--navy-deep); }
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-secondary:hover {
+  background: #E2E8F0;
+}
+
+.btn-primary {
+  background: #1E293B;
+  color: #FFFFFF;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #0F172A;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 /* ===== Toast ===== */
 .toast {
@@ -1204,60 +1252,144 @@ onBeforeUnmount(() => {
   border-left: 3px solid transparent;
 }
 
-.toast.success { 
-  background: var(--navy); 
-  color: #FFFFFF; 
-  border-left-color: #22C55E; 
-}
-.toast.error { 
-  background: var(--navy); 
-  color: #FFFFFF; 
-  border-left-color: #EF4444; 
+.toast.success {
+  background: #1E293B;
+  color: #FFFFFF;
+  border-left-color: #22C55E;
 }
 
-.toast-content { display: flex; align-items: center; gap: 10px; }
+.toast.error {
+  background: #1E293B;
+  color: #FFFFFF;
+  border-left-color: #EF4444;
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .toast-icon {
   font-family: 'IBM Plex Mono', monospace;
   font-weight: 600;
-  width: 18px; height: 18px;
-  display: flex; align-items: center; justify-content: center;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
   background: rgba(255,255,255,0.1);
   font-size: 12px;
   flex-shrink: 0;
 }
-.toast-message { font-size: 13.5px; font-weight: 500; }
+
+.toast-message {
+  font-size: 13.5px;
+  font-weight: 500;
+}
 
 .toast-close {
-  background: transparent; border: none; color: rgba(255,255,255,0.5);
-  font-size: 20px; cursor: pointer; padding: 0 2px; line-height: 1;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
 }
-.toast-close:hover { color: #FFFFFF; }
 
-.toast-fade-enter-active, .toast-fade-leave-active { transition: all 0.2s ease; }
-.toast-fade-enter-from, .toast-fade-leave-to { opacity: 0; transform: translateY(8px); }
+.toast-close:hover {
+  color: #FFFFFF;
+}
+
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
 
 /* ===== Responsive ===== */
 @media (max-width: 1024px) {
-  .sidebar { width: 76px; }
-  .sidebar-inner { padding: 20px 12px; }
-  .logo-text, .user-details, .nav-eyebrow, .nav-label, .nav-badge, .logout-btn span:last-child { display: none; }
-  .logo { justify-content: center; }
-  .user-profile { justify-content: center; padding: 8px; }
-  .nav-btn, .logout-btn { justify-content: center; padding: 12px; }
-  .main { padding: 22px; }
+  .sidebar {
+    width: 76px;
+  }
+  .sidebar-inner {
+    padding: 20px 12px;
+  }
+  .logo-text,
+  .user-details,
+  .nav-eyebrow,
+  .nav-label,
+  .nav-badge,
+  .logout-btn span:last-child {
+    display: none;
+  }
+  .logo {
+    justify-content: center;
+  }
+  .user-profile {
+    justify-content: center;
+    padding: 8px;
+  }
+  .nav-btn,
+  .logout-btn {
+    justify-content: center;
+    padding: 12px;
+  }
+  .main {
+    padding: 22px;
+  }
 }
 
 @media (max-width: 768px) {
-  .form-row { grid-template-columns: 1fr; }
-  .header { flex-direction: column; align-items: flex-start; }
-  .header-stats { width: 100%; justify-content: center; }
-  .toast { min-width: auto; width: 90%; bottom: 16px; right: 5%; left: 5%; }
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .header-stats {
+    width: 100%;
+    justify-content: center;
+  }
+  .toast {
+    min-width: auto;
+    width: 90%;
+    bottom: 16px;
+    right: 5%;
+    left: 5%;
+  }
+  .modal-container {
+    margin: 10px;
+    max-height: 95vh;
+  }
 }
 
 @media (max-width: 480px) {
-  .main { padding: 16px; }
-  .header-left h1 { font-size: 22px; }
-  .add-card { padding: 18px; }
+  .main {
+    padding: 16px;
+  }
+  .header-left h1 {
+    font-size: 22px;
+  }
+  .add-card {
+    padding: 18px;
+  }
+  .modal-body {
+    padding: 16px 18px;
+  }
+  .modal-header {
+    padding: 16px 18px;
+  }
+  .modal-footer {
+    padding: 12px 18px;
+  }
 }
 </style>
