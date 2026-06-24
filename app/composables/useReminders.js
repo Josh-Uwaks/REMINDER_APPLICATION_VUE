@@ -14,13 +14,12 @@ export const useReminders = () => {
   const reminders = ref([])
   const loading = ref(false)
   const sendingSms = ref(false)
+  const sendingEmail = ref(false)
   const error = ref(null)
 
   const fetchReminders = async (filter = null) => {
-    // Create cache key
     const cacheKey = filter || 'all'
     
-    // Check if we have cached data that's still fresh
     const now = Date.now()
     if (cache.reminders[cacheKey] && cache.timestamp[cacheKey] && 
         (now - cache.timestamp[cacheKey]) < CACHE_TTL) {
@@ -36,7 +35,6 @@ export const useReminders = () => {
       const url = filter ? `/reminders?filter=${filter}` : '/reminders'
       const response = await apiClient.get(url)
       
-      // Store in cache
       cache.reminders[cacheKey] = response.data.data
       cache.timestamp[cacheKey] = Date.now()
       
@@ -50,13 +48,10 @@ export const useReminders = () => {
     }
   }
 
-  // Force refresh (bypass cache)
   const refreshReminders = async (filter = null) => {
     const cacheKey = filter || 'all'
-    // Invalidate cache
     delete cache.reminders[cacheKey]
     delete cache.timestamp[cacheKey]
-    
     return await fetchReminders(filter)
   }
 
@@ -67,18 +62,19 @@ export const useReminders = () => {
     try {
       const response = await apiClient.post('/reminders', reminderData)
       
-      // Invalidate all caches since data changed
       cache.reminders = {}
       cache.timestamp = {}
       
       reminders.value.push(response.data.data)
       
-      const smsSent = response.data.smsSent || false
+      const smsSent = response.data.smsScheduled || false
+      const emailSent = response.data.emailScheduled || false
       
       return { 
         success: true, 
         data: response.data.data,
         smsSent: smsSent,
+        emailSent: emailSent,
         message: response.data.message
       }
     } catch (err) {
@@ -96,7 +92,6 @@ export const useReminders = () => {
     try {
       const response = await apiClient.put(`/reminders/${id}`, reminderData)
       
-      // Invalidate all caches since data changed
       cache.reminders = {}
       cache.timestamp = {}
       
@@ -120,7 +115,6 @@ export const useReminders = () => {
     try {
       await apiClient.delete(`/reminders/${id}`)
       
-      // Invalidate all caches since data changed
       cache.reminders = {}
       cache.timestamp = {}
       
@@ -141,7 +135,6 @@ export const useReminders = () => {
     try {
       const response = await apiClient.patch(`/reminders/${id}/toggle`)
       
-      // Invalidate all caches since data changed
       cache.reminders = {}
       cache.timestamp = {}
       
@@ -158,6 +151,7 @@ export const useReminders = () => {
     }
   }
 
+  // Send SMS notification
   const sendSmsNotification = async (id) => {
     sendingSms.value = true
     error.value = null
@@ -190,14 +184,61 @@ export const useReminders = () => {
     }
   }
 
+  // ⭐ NEW: Send Email notification
+  const sendEmailNotification = async (id) => {
+    sendingEmail.value = true
+    error.value = null
+    
+    try {
+      const response = await apiClient.post(`/reminders/${id}/send-email`)
+      
+      const index = reminders.value.findIndex(r => r._id === id)
+      if (index !== -1) {
+        reminders.value[index] = {
+          ...reminders.value[index],
+          emailSent: true
+        }
+      }
+      
+      return { 
+        success: true, 
+        message: 'Email sent successfully',
+        data: response.data.data
+      }
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to send email notification'
+      return { 
+        success: false, 
+        error: error.value,
+        code: err.response?.data?.code
+      }
+    } finally {
+      sendingEmail.value = false
+    }
+  }
+
+  // Check if reminder has SMS capability
   const hasSmsCapability = (reminder) => {
     return reminder && 
            reminder.phone && 
            (reminder.notificationMode === 'sms' || reminder.notificationMode === 'both')
   }
 
+  // ⭐ NEW: Check if reminder has Email capability
+  const hasEmailCapability = (reminder) => {
+    return reminder && 
+           reminder.email && 
+           (reminder.notificationMode === 'email' || reminder.notificationMode === 'both')
+  }
+
+  // Check if SMS was sent
   const isSmsSent = (reminder) => {
     return reminder && reminder.notified === true
+  }
+
+  // ⭐ NEW: Check if Email was sent
+  const isEmailSent = (reminder) => {
+    return reminder && reminder.emailSent === true
   }
 
   // Clear all cache
@@ -210,6 +251,7 @@ export const useReminders = () => {
     reminders,
     loading,
     sendingSms,
+    sendingEmail,
     error,
     fetchReminders,
     refreshReminders,
@@ -218,8 +260,11 @@ export const useReminders = () => {
     deleteReminder,
     toggleComplete,
     sendSmsNotification,
+    sendEmailNotification,
     hasSmsCapability,
+    hasEmailCapability,
     isSmsSent,
+    isEmailSent,
     clearCache,
   }
 }

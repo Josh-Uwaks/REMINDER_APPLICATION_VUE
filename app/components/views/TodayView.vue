@@ -43,12 +43,21 @@
               <span class="meta-badge" :class="reminder.notificationMode">
                 {{ getNotificationIcon(reminder.notificationMode) }} {{ getNotificationLabel(reminder.notificationMode) }}
               </span>
+              <!-- SMS Status Badge -->
               <span 
                 v-if="hasSmsCapability(reminder)" 
                 class="meta-badge sms-status"
                 :class="{ 'sent': reminder.notified }"
               >
                 {{ reminder.notified ? '📱 Sent' : '📱 Pending' }}
+              </span>
+              <!-- Email Status Badge -->
+              <span 
+                v-if="hasEmailCapability(reminder)" 
+                class="meta-badge email-status"
+                :class="{ 'sent': reminder.emailSent }"
+              >
+                {{ reminder.emailSent ? '📧 Sent' : '📧 Pending' }}
               </span>
             </div>
             <div class="card-contact" v-if="reminder.email || reminder.phone">
@@ -62,6 +71,19 @@
           </div>
         </div>
         <div class="card-actions">
+          <!-- Send Email Button -->
+          <button 
+            v-if="hasEmailCapability(reminder) && !reminder.emailSent"
+            @click="$emit('send-email', reminder._id)" 
+            class="action-btn email-btn" 
+            title="Send Email Notification"
+            :disabled="sendingEmail"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 6L12 13L2 6M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <!-- Send SMS Button -->
           <button 
             v-if="hasSmsCapability(reminder) && !reminder.notified"
             @click="$emit('send-sms', reminder._id)" 
@@ -110,10 +132,14 @@ const props = defineProps({
   sendingSms: {
     type: Boolean,
     default: false
+  },
+  sendingEmail: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['refresh', 'edit', 'delete', 'toggle', 'send-sms'])
+const emit = defineEmits(['refresh', 'edit', 'delete', 'toggle', 'send-sms', 'send-email'])
 
 const dayProgress = computed(() => {
   const now = new Date()
@@ -142,6 +168,12 @@ const hasSmsCapability = (reminder) => {
          reminder.phone && 
          (reminder.notificationMode === 'sms' || reminder.notificationMode === 'both')
 }
+
+const hasEmailCapability = (reminder) => {
+  return reminder && 
+         reminder.email && 
+         (reminder.notificationMode === 'email' || reminder.notificationMode === 'both')
+}
 </script>
 
 <style scoped>
@@ -163,7 +195,7 @@ const hasSmsCapability = (reminder) => {
   font-size: 18px;
   font-weight: 600;
   margin: 0;
-  color: var(--ink, #14181F);
+  color: var(--ink, #1E293B);
 }
 
 .progress-container {
@@ -175,14 +207,14 @@ const hasSmsCapability = (reminder) => {
 .progress-bar {
   width: 140px;
   height: 6px;
-  background: var(--line, #E3E0D8);
+  background: var(--line, #E2E8F0);
   border-radius: 3px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--brass, #A9772F), var(--brass-deep, #8A5F22));
+  background: linear-gradient(90deg, var(--primary, #3B82F6), var(--primary-deep, #2563EB));
   border-radius: 3px;
   transition: width 0.6s ease;
 }
@@ -190,7 +222,7 @@ const hasSmsCapability = (reminder) => {
 .progress-text {
   font-size: 13px;
   font-weight: 600;
-  color: var(--brass, #A9772F);
+  color: var(--primary, #3B82F6);
   font-family: 'IBM Plex Mono', monospace;
 }
 
@@ -208,7 +240,7 @@ const hasSmsCapability = (reminder) => {
   justify-content: space-between;
   align-items: center;
   transition: all 0.15s;
-  border: 1px solid var(--line, #E3E0D8);
+  border: 1px solid var(--line, #E2E8F0);
   animation: fadeIn 0.3s ease;
 }
 
@@ -218,16 +250,16 @@ const hasSmsCapability = (reminder) => {
 }
 
 .reminder-card:hover {
-  border-color: var(--brass, #A9772F);
+  border-color: var(--primary, #3B82F6);
   box-shadow: 0 4px 12px rgba(20,24,31,0.06);
 }
 
 .reminder-card.priority-high {
-  border-left: 3px solid #A23E2A;
+  border-left: 3px solid #EF4444;
 }
 
 .reminder-card.priority-medium {
-  border-left: 3px solid #A9772F;
+  border-left: 3px solid #F59E0B;
 }
 
 .reminder-card.completed {
@@ -265,15 +297,15 @@ const hasSmsCapability = (reminder) => {
 .checkmark {
   width: 20px;
   height: 20px;
-  border: 2px solid var(--line, #E3E0D8);
+  border: 2px solid var(--line, #E2E8F0);
   border-radius: 4px;
   display: inline-block;
   transition: all 0.15s;
 }
 
 .checkbox-container input:checked + .checkmark {
-  background: var(--brass, #A9772F);
-  border-color: var(--brass, #A9772F);
+  background: var(--primary, #3B82F6);
+  border-color: var(--primary, #3B82F6);
 }
 
 .checkbox-container input:checked + .checkmark::after {
@@ -296,7 +328,7 @@ const hasSmsCapability = (reminder) => {
 .card-title {
   font-size: 15px;
   font-weight: 500;
-  color: var(--ink, #14181F);
+  color: var(--ink, #1E293B);
   margin-bottom: 4px;
   font-family: 'Inter', sans-serif;
 }
@@ -307,18 +339,18 @@ const hasSmsCapability = (reminder) => {
   gap: 12px;
   flex-wrap: wrap;
   font-size: 12px;
-  color: var(--ink-soft, #5B6472);
+  color: var(--ink-soft, #64748B);
 }
 
 .meta-time {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: var(--ink-soft, #5B6472);
+  color: var(--ink-soft, #64748B);
 }
 
 .meta-time svg {
-  color: var(--ink-soft, #5B6472);
+  color: var(--ink-soft, #64748B);
 }
 
 .meta-badge {
@@ -332,33 +364,43 @@ const hasSmsCapability = (reminder) => {
 }
 
 .meta-badge.browser {
-  background: var(--paper, #F7F6F2);
-  color: var(--ink-soft, #5B6472);
+  background: var(--paper, #F8FAFC);
+  color: var(--ink-soft, #64748B);
 }
 
 .meta-badge.email {
-  background: #E6EFE9;
-  color: #33664A;
+  background: #EFF6FF;
+  color: #3B82F6;
 }
 
 .meta-badge.sms {
-  background: #F6E8E4;
-  color: #A23E2A;
+  background: #FEF2F2;
+  color: #EF4444;
 }
 
 .meta-badge.both {
-  background: #F3E9DA;
-  color: #8A5F22;
+  background: #F3E8FF;
+  color: #8B5CF6;
 }
 
 .sms-status {
-  background: #E6EFE9;
-  color: #33664A;
+  background: #FEF2F2;
+  color: #EF4444;
 }
 
 .sms-status.sent {
-  background: #E6EFE9;
-  color: #33664A;
+  background: #D1FAE5;
+  color: #10B981;
+}
+
+.email-status {
+  background: #EFF6FF;
+  color: #3B82F6;
+}
+
+.email-status.sent {
+  background: #D1FAE5;
+  color: #10B981;
 }
 
 .card-contact {
@@ -366,7 +408,7 @@ const hasSmsCapability = (reminder) => {
   gap: 12px;
   margin-top: 4px;
   font-size: 11px;
-  color: var(--ink-soft, #5B6472);
+  color: var(--ink-soft, #64748B);
 }
 
 .contact-item {
@@ -391,33 +433,47 @@ const hasSmsCapability = (reminder) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--ink-soft, #5B6472);
+  color: var(--ink-soft, #64748B);
   transition: all 0.15s;
 }
 
 .action-btn:hover:not(:disabled) {
-  background: var(--paper, #F7F6F2);
+  background: var(--paper, #F8FAFC);
 }
 
 .edit-btn:hover:not(:disabled) {
-  color: var(--brass, #A9772F);
+  color: var(--primary, #3B82F6);
 }
 
 .delete-btn:hover:not(:disabled) {
-  background: #F6E8E4;
-  color: #A23E2A;
+  background: #FEF2F2;
+  color: #EF4444;
 }
 
 .sms-btn {
-  color: #33664A;
+  color: #EF4444;
 }
 
 .sms-btn:hover:not(:disabled) {
-  background: #E6EFE9;
-  color: #33664A;
+  background: #FEF2F2;
+  color: #DC2626;
 }
 
 .sms-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.email-btn {
+  color: #3B82F6;
+}
+
+.email-btn:hover:not(:disabled) {
+  background: #EFF6FF;
+  color: #2563EB;
+}
+
+.email-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -427,7 +483,7 @@ const hasSmsCapability = (reminder) => {
   padding: 60px 20px;
   background: var(--surface, #FFFFFF);
   border-radius: 8px;
-  border: 1px solid var(--line, #E3E0D8);
+  border: 1px solid var(--line, #E2E8F0);
 }
 
 .empty-icon {
@@ -440,11 +496,11 @@ const hasSmsCapability = (reminder) => {
   font-weight: 500;
   margin: 0 0 8px;
   font-family: 'Sora', sans-serif;
-  color: var(--ink, #14181F);
+  color: var(--ink, #1E293B);
 }
 
 .empty-state p {
-  color: var(--ink-soft, #5B6472);
+  color: var(--ink-soft, #64748B);
   margin: 0;
 }
 </style>

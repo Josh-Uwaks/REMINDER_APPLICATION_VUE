@@ -139,7 +139,7 @@
           <div v-if="newNotificationMode === 'sms' || newNotificationMode === 'both'" class="form-row">
             <div class="form-group full-width">
               <label class="form-label">Phone number</label>
-              <input v-model="newPhone" type="tel" placeholder="+234 803 203 4293" class="form-input" />
+              <input v-model="newPhone" type="tel" placeholder="+234 812 121 1212" class="form-input" />
               <small class="form-hint">Format: +234 80X XXX XXXX</small>
             </div>
           </div>
@@ -158,11 +158,13 @@
           :reminders="currentViewReminders"
           :loading="viewLoading"
           :sending-sms="sendingSms"
+          :sending-email="sendingEmail"
           @refresh="refreshView"
           @edit="editReminder"
           @delete="deleteReminder"
           @toggle="toggleComplete"
           @send-sms="handleSendSms"
+          @send-email="handleSendEmail"
         />
       </KeepAlive>
     </main>
@@ -259,6 +261,7 @@ const {
   reminders,
   loading: remindersLoading,
   sendingSms,
+  sendingEmail,
   fetchReminders,
   refreshReminders,
   createReminder,
@@ -266,8 +269,11 @@ const {
   deleteReminder: deleteReminderApi,
   toggleComplete: toggleCompleteApi,
   sendSmsNotification,
+  sendEmailNotification,
   hasSmsCapability,
-  isSmsSent
+  hasEmailCapability,
+  isSmsSent,
+  isEmailSent
 } = useReminders()
 
 // User data
@@ -473,7 +479,13 @@ const addReminder = async () => {
     newPhone.value = ''
     setDefaultDateTime()
     await refreshView()
-    showToast(result.smsSent ? 'Reminder added — SMS scheduled' : 'Reminder added', 'success', '✓')
+    
+    let message = 'Reminder added'
+    if (result.smsSent && result.emailSent) message = 'Reminder added — SMS & Email scheduled'
+    else if (result.smsSent) message = 'Reminder added — SMS scheduled'
+    else if (result.emailSent) message = 'Reminder added — Email scheduled'
+    
+    showToast(message, 'success', '✓')
   } else {
     showToast(result.error || 'Could not add reminder', 'error', '!')
   }
@@ -501,10 +513,21 @@ const deleteReminder = async (id) => {
 const handleSendSms = async (id) => {
   const result = await sendSmsNotification(id)
   if (result.success) {
-    showToast('SMS sent', 'success', '✓')
+    showToast('📱 SMS sent successfully!', 'success', '✓')
     await refreshView()
   } else {
     showToast(result.error || 'Could not send SMS', 'error', '!')
+  }
+}
+
+// ⭐ NEW: Handle sending email
+const handleSendEmail = async (id) => {
+  const result = await sendEmailNotification(id)
+  if (result.success) {
+    showToast('📧 Email sent successfully!', 'success', '✓')
+    await refreshView()
+  } else {
+    showToast(result.error || 'Could not send email', 'error', '!')
   }
 }
 
