@@ -159,9 +159,11 @@ const hasSmsCapability = (reminder) => {
 }
 
 .view-header h2 {
+  font-family: 'Sora', sans-serif;
   font-size: 18px;
   font-weight: 600;
   margin: 0;
+  color: var(--ink, #14181F);
 }
 
 .progress-container {
@@ -173,14 +175,14 @@ const hasSmsCapability = (reminder) => {
 .progress-bar {
   width: 140px;
   height: 6px;
-  background: #E2E8F0;
+  background: var(--line, #E3E0D8);
   border-radius: 3px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3B82F6, #6366F1);
+  background: linear-gradient(90deg, var(--brass, #A9772F), var(--brass-deep, #8A5F22));
   border-radius: 3px;
   transition: width 0.6s ease;
 }
@@ -188,7 +190,8 @@ const hasSmsCapability = (reminder) => {
 .progress-text {
   font-size: 13px;
   font-weight: 600;
-  color: #3B82F6;
+  color: var(--brass, #A9772F);
+  font-family: 'IBM Plex Mono', monospace;
 }
 
 .reminders-grid {
@@ -198,14 +201,14 @@ const hasSmsCapability = (reminder) => {
 }
 
 .reminder-card {
-  background: white;
-  border-radius: 14px;
+  background: var(--surface, #FFFFFF);
+  border-radius: 8px;
   padding: 14px 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.2s;
-  border: 1px solid #E2E8F0;
+  transition: all 0.15s;
+  border: 1px solid var(--line, #E3E0D8);
   animation: fadeIn 0.3s ease;
 }
 
@@ -215,16 +218,16 @@ const hasSmsCapability = (reminder) => {
 }
 
 .reminder-card:hover {
-  border-color: #CBD5E1;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-color: var(--brass, #A9772F);
+  box-shadow: 0 4px 12px rgba(20,24,31,0.06);
 }
 
 .reminder-card.priority-high {
-  border-left: 4px solid #EF4444;
+  border-left: 3px solid #A23E2A;
 }
 
 .reminder-card.priority-medium {
-  border-left: 4px solid #F59E0B;
+  border-left: 3px solid #A9772F;
 }
 
 .reminder-card.completed {
@@ -262,15 +265,15 @@ const hasSmsCapability = (reminder) => {
 .checkmark {
   width: 20px;
   height: 20px;
-  border: 2px solid #CBD5E1;
-  border-radius: 6px;
+  border: 2px solid var(--line, #E3E0D8);
+  border-radius: 4px;
   display: inline-block;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
 .checkbox-container input:checked + .checkmark {
-  background: #3B82F6;
-  border-color: #3B82F6;
+  background: var(--brass, #A9772F);
+  border-color: var(--brass, #A9772F);
 }
 
 .checkbox-container input:checked + .checkmark::after {
@@ -293,8 +296,9 @@ const hasSmsCapability = (reminder) => {
 .card-title {
   font-size: 15px;
   font-weight: 500;
-  color: #1E293B;
+  color: var(--ink, #14181F);
   margin-bottom: 4px;
+  font-family: 'Inter', sans-serif;
 }
 
 .card-meta {
@@ -303,18 +307,18 @@ const hasSmsCapability = (reminder) => {
   gap: 12px;
   flex-wrap: wrap;
   font-size: 12px;
-  color: #64748B;
+  color: var(--ink-soft, #5B6472);
 }
 
 .meta-time {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #94A3B8;
+  color: var(--ink-soft, #5B6472);
 }
 
 .meta-time svg {
-  color: #94A3B8;
+  color: var(--ink-soft, #5B6472);
 }
 
 .meta-badge {
@@ -322,39 +326,39 @@ const hasSmsCapability = (reminder) => {
   align-items: center;
   gap: 4px;
   padding: 2px 10px;
-  border-radius: 20px;
+  border-radius: 4px;
   font-size: 11px;
   font-weight: 500;
 }
 
 .meta-badge.browser {
-  background: #F1F5F9;
-  color: #475569;
+  background: var(--paper, #F7F6F2);
+  color: var(--ink-soft, #5B6472);
 }
 
 .meta-badge.email {
-  background: #EFF6FF;
-  color: #2563EB;
+  background: #E6EFE9;
+  color: #33664A;
 }
 
 .meta-badge.sms {
-  background: #FEF2F2;
-  color: #DC2626;
+  background: #F6E8E4;
+  color: #A23E2A;
 }
 
 .meta-badge.both {
-  background: #F3E8FF;
-  color: #9333EA;
+  background: #F3E9DA;
+  color: #8A5F22;
 }
 
 .sms-status {
-  background: #EFF6FF;
-  color: #3B82F6;
+  background: #E6EFE9;
+  color: #33664A;
 }
 
 .sms-status.sent {
-  background: #D1FAE5;
-  color: #059669;
+  background: #E6EFE9;
+  color: #33664A;
 }
 
 .card-contact {
@@ -362,7 +366,7 @@ const hasSmsCapability = (reminder) => {
   gap: 12px;
   margin-top: 4px;
   font-size: 11px;
-  color: #94A3B8;
+  color: var(--ink-soft, #5B6472);
 }
 
 .contact-item {
@@ -382,35 +386,35 @@ const hasSmsCapability = (reminder) => {
   height: 32px;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94A3B8;
-  transition: all 0.2s;
+  color: var(--ink-soft, #5B6472);
+  transition: all 0.15s;
 }
 
 .action-btn:hover:not(:disabled) {
-  background: #F1F5F9;
+  background: var(--paper, #F7F6F2);
 }
 
 .edit-btn:hover:not(:disabled) {
-  color: #3B82F6;
+  color: var(--brass, #A9772F);
 }
 
 .delete-btn:hover:not(:disabled) {
-  background: #FEF2F2;
-  color: #EF4444;
+  background: #F6E8E4;
+  color: #A23E2A;
 }
 
 .sms-btn {
-  color: #3B82F6;
+  color: #33664A;
 }
 
 .sms-btn:hover:not(:disabled) {
-  background: #EFF6FF;
-  color: #2563EB;
+  background: #E6EFE9;
+  color: #33664A;
 }
 
 .sms-btn:disabled {
@@ -421,9 +425,9 @@ const hasSmsCapability = (reminder) => {
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  background: white;
-  border-radius: 20px;
-  border: 1px solid #E2E8F0;
+  background: var(--surface, #FFFFFF);
+  border-radius: 8px;
+  border: 1px solid var(--line, #E3E0D8);
 }
 
 .empty-icon {
@@ -435,10 +439,12 @@ const hasSmsCapability = (reminder) => {
   font-size: 18px;
   font-weight: 500;
   margin: 0 0 8px;
+  font-family: 'Sora', sans-serif;
+  color: var(--ink, #14181F);
 }
 
 .empty-state p {
-  color: #64748B;
+  color: var(--ink-soft, #5B6472);
   margin: 0;
 }
 </style>

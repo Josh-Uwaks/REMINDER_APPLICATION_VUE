@@ -2,6 +2,14 @@
 import { ref } from 'vue'
 import apiClient from '~/api/client'
 
+// Cache for different views
+const cache = {
+  reminders: {},
+  timestamp: {}
+}
+
+const CACHE_TTL = 60000 // 60 seconds cache TTL
+
 export const useReminders = () => {
   const reminders = ref([])
   const loading = ref(false)
@@ -9,14 +17,31 @@ export const useReminders = () => {
   const error = ref(null)
 
   const fetchReminders = async (filter = null) => {
+    // Create cache key
+    const cacheKey = filter || 'all'
+    
+    // Check if we have cached data that's still fresh
+    const now = Date.now()
+    if (cache.reminders[cacheKey] && cache.timestamp[cacheKey] && 
+        (now - cache.timestamp[cacheKey]) < CACHE_TTL) {
+      console.log(`🔄 Using cached data for filter: ${cacheKey}`)
+      reminders.value = cache.reminders[cacheKey]
+      return { success: true, data: reminders.value, cached: true }
+    }
+    
     loading.value = true
     error.value = null
     
     try {
       const url = filter ? `/reminders?filter=${filter}` : '/reminders'
       const response = await apiClient.get(url)
+      
+      // Store in cache
+      cache.reminders[cacheKey] = response.data.data
+      cache.timestamp[cacheKey] = Date.now()
+      
       reminders.value = response.data.data
-      return { success: true, data: reminders.value }
+      return { success: true, data: reminders.value, cached: false }
     } catch (err) {
       error.value = err.response?.data?.message || 'Failed to fetch reminders'
       return { success: false, error: error.value }
@@ -25,15 +50,29 @@ export const useReminders = () => {
     }
   }
 
+  // Force refresh (bypass cache)
+  const refreshReminders = async (filter = null) => {
+    const cacheKey = filter || 'all'
+    // Invalidate cache
+    delete cache.reminders[cacheKey]
+    delete cache.timestamp[cacheKey]
+    
+    return await fetchReminders(filter)
+  }
+
   const createReminder = async (reminderData) => {
     loading.value = true
     error.value = null
     
     try {
       const response = await apiClient.post('/reminders', reminderData)
+      
+      // Invalidate all caches since data changed
+      cache.reminders = {}
+      cache.timestamp = {}
+      
       reminders.value.push(response.data.data)
       
-      // Check if SMS was sent
       const smsSent = response.data.smsSent || false
       
       return { 
@@ -56,6 +95,11 @@ export const useReminders = () => {
     
     try {
       const response = await apiClient.put(`/reminders/${id}`, reminderData)
+      
+      // Invalidate all caches since data changed
+      cache.reminders = {}
+      cache.timestamp = {}
+      
       const index = reminders.value.findIndex(r => r._id === id)
       if (index !== -1) {
         reminders.value[index] = response.data.data
@@ -75,6 +119,11 @@ export const useReminders = () => {
     
     try {
       await apiClient.delete(`/reminders/${id}`)
+      
+      // Invalidate all caches since data changed
+      cache.reminders = {}
+      cache.timestamp = {}
+      
       reminders.value = reminders.value.filter(r => r._id !== id)
       return { success: true }
     } catch (err) {
@@ -91,6 +140,11 @@ export const useReminders = () => {
     
     try {
       const response = await apiClient.patch(`/reminders/${id}/toggle`)
+      
+      // Invalidate all caches since data changed
+      cache.reminders = {}
+      cache.timestamp = {}
+      
       const index = reminders.value.findIndex(r => r._id === id)
       if (index !== -1) {
         reminders.value[index] = response.data.data
@@ -104,8 +158,6 @@ export const useReminders = () => {
     }
   }
 
-  // @desc    Send SMS notification for a reminder
-  // @route   POST /api/reminders/:id/send-sms
   const sendSmsNotification = async (id) => {
     sendingSms.value = true
     error.value = null
@@ -113,7 +165,6 @@ export const useReminders = () => {
     try {
       const response = await apiClient.post(`/reminders/${id}/send-sms`)
       
-      // Update the reminder's notified status
       const index = reminders.value.findIndex(r => r._id === id)
       if (index !== -1) {
         reminders.value[index] = {
@@ -139,16 +190,20 @@ export const useReminders = () => {
     }
   }
 
-  // @desc    Check if a reminder has SMS capability
   const hasSmsCapability = (reminder) => {
     return reminder && 
            reminder.phone && 
            (reminder.notificationMode === 'sms' || reminder.notificationMode === 'both')
   }
 
-  // @desc    Check if SMS was sent for a reminder
   const isSmsSent = (reminder) => {
     return reminder && reminder.notified === true
+  }
+
+  // Clear all cache
+  const clearCache = () => {
+    cache.reminders = {}
+    cache.timestamp = {}
   }
 
   return {
@@ -157,6 +212,7 @@ export const useReminders = () => {
     sendingSms,
     error,
     fetchReminders,
+    refreshReminders,
     createReminder,
     updateReminder,
     deleteReminder,
@@ -164,5 +220,6 @@ export const useReminders = () => {
     sendSmsNotification,
     hasSmsCapability,
     isSmsSent,
+    clearCache,
   }
 }
