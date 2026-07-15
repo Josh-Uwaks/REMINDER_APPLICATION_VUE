@@ -35,13 +35,34 @@ export const useReminders = () => {
       const url = filter ? `/reminders?filter=${filter}` : '/reminders'
       const response = await apiClient.get(url)
       
-      cache.reminders[cacheKey] = response.data.data
+      // Check if response has the expected structure
+      if (!response.data || !response.data.data) {
+        console.error('Invalid response structure:', response.data)
+        throw new Error('Invalid response from server')
+      }
+      
+      const data = response.data.data
+      
+      // Ensure data is an array
+      if (!Array.isArray(data)) {
+        console.error('Expected array but got:', data)
+        throw new Error('Invalid data format')
+      }
+      
+      cache.reminders[cacheKey] = data
       cache.timestamp[cacheKey] = Date.now()
       
-      reminders.value = response.data.data
+      reminders.value = data
       return { success: true, data: reminders.value, cached: false }
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to fetch reminders'
+      console.error('Fetch error:', err)
+      error.value = err.response?.data?.message || err.message || 'Failed to fetch reminders'
+      
+      // On error, keep previous data if available
+      if (cache.reminders[cacheKey]) {
+        reminders.value = cache.reminders[cacheKey]
+      }
+      
       return { success: false, error: error.value }
     } finally {
       loading.value = false
@@ -62,23 +83,26 @@ export const useReminders = () => {
     try {
       const response = await apiClient.post('/reminders', reminderData)
       
+      // Clear all cache
       cache.reminders = {}
       cache.timestamp = {}
       
-      reminders.value.push(response.data.data)
+      const newReminder = response.data.data
+      reminders.value = [newReminder, ...reminders.value]
       
       const smsSent = response.data.smsScheduled || false
       const emailSent = response.data.emailScheduled || false
       
       return { 
         success: true, 
-        data: response.data.data,
+        data: newReminder,
         smsSent: smsSent,
         emailSent: emailSent,
         message: response.data.message
       }
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to create reminder'
+      console.error('Create error:', err)
+      error.value = err.response?.data?.message || err.message || 'Failed to create reminder'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
@@ -101,7 +125,8 @@ export const useReminders = () => {
       }
       return { success: true, data: response.data.data }
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to update reminder'
+      console.error('Update error:', err)
+      error.value = err.response?.data?.message || err.message || 'Failed to update reminder'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
@@ -121,7 +146,8 @@ export const useReminders = () => {
       reminders.value = reminders.value.filter(r => r._id !== id)
       return { success: true }
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to delete reminder'
+      console.error('Delete error:', err)
+      error.value = err.response?.data?.message || err.message || 'Failed to delete reminder'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
@@ -144,14 +170,14 @@ export const useReminders = () => {
       }
       return { success: true, data: response.data.data }
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to toggle reminder'
+      console.error('Toggle error:', err)
+      error.value = err.response?.data?.message || err.message || 'Failed to toggle reminder'
       return { success: false, error: error.value }
     } finally {
       loading.value = false
     }
   }
 
-  // Send SMS notification
   const sendSmsNotification = async (id) => {
     sendingSms.value = true
     error.value = null
@@ -173,7 +199,8 @@ export const useReminders = () => {
         data: response.data.data
       }
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to send SMS notification'
+      console.error('SMS error:', err)
+      error.value = err.response?.data?.message || err.message || 'Failed to send SMS notification'
       return { 
         success: false, 
         error: error.value,
@@ -184,7 +211,6 @@ export const useReminders = () => {
     }
   }
 
-  // ⭐ NEW: Send Email notification
   const sendEmailNotification = async (id) => {
     sendingEmail.value = true
     error.value = null
@@ -206,7 +232,8 @@ export const useReminders = () => {
         data: response.data.data
       }
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to send email notification'
+      console.error('Email error:', err)
+      error.value = err.response?.data?.message || err.message || 'Failed to send email notification'
       return { 
         success: false, 
         error: error.value,
@@ -217,31 +244,26 @@ export const useReminders = () => {
     }
   }
 
-  // Check if reminder has SMS capability
   const hasSmsCapability = (reminder) => {
     return reminder && 
            reminder.phone && 
            (reminder.notificationMode === 'sms' || reminder.notificationMode === 'both')
   }
 
-  // ⭐ NEW: Check if reminder has Email capability
   const hasEmailCapability = (reminder) => {
     return reminder && 
            reminder.email && 
            (reminder.notificationMode === 'email' || reminder.notificationMode === 'both')
   }
 
-  // Check if SMS was sent
   const isSmsSent = (reminder) => {
     return reminder && reminder.notified === true
   }
 
-  // ⭐ NEW: Check if Email was sent
   const isEmailSent = (reminder) => {
     return reminder && reminder.emailSent === true
   }
 
-  // Clear all cache
   const clearCache = () => {
     cache.reminders = {}
     cache.timestamp = {}

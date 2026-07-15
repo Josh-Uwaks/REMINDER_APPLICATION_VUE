@@ -1,4 +1,4 @@
-<!-- app/pages/dashboard.vue -->
+<!-- app/pages/index.vue -->
 <template>
   <div class="dashboard">
     <!-- Sidebar -->
@@ -150,8 +150,14 @@
         </div>
       </section>
 
+      <!-- Loading State -->
+      <div v-if="viewLoading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading reminders...</p>
+      </div>
+
       <!-- View Content with Keep-Alive -->
-      <KeepAlive>
+      <KeepAlive v-else>
         <component
           :is="currentViewComponent"
           :key="currentView"
@@ -244,7 +250,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, onActivated, defineAsyncComponent } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, defineAsyncComponent } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useReminders } from '~/composables/useReminders'
 
@@ -269,11 +275,7 @@ const {
   deleteReminder: deleteReminderApi,
   toggleComplete: toggleCompleteApi,
   sendSmsNotification,
-  sendEmailNotification,
-  hasSmsCapability,
-  hasEmailCapability,
-  isSmsSent,
-  isEmailSent
+  sendEmailNotification
 } = useReminders()
 
 // User data
@@ -335,28 +337,38 @@ const navItems = computed(() => {
 })
 
 const todayReminders = computed(() => {
+  if (!Array.isArray(reminders.value)) return []
   const today = new Date().toDateString()
   return reminders.value
-    .filter(r => new Date(r.datetime).toDateString() === today)
+    .filter(r => r && r.datetime && new Date(r.datetime).toDateString() === today)
     .sort((a, b) => new Date(a.datetime) - new Date(b.datetime))
 })
 
 const upcomingReminders = computed(() => {
+  if (!Array.isArray(reminders.value)) return []
   const now = new Date()
   return reminders.value
-    .filter(r => !r.completed && new Date(r.datetime) > now)
+    .filter(r => r && !r.completed && r.datetime && new Date(r.datetime) > now)
     .sort((a, b) => new Date(a.datetime) - new Date(b.datetime))
 })
 
 const filteredReminders = computed(() => {
+  if (!Array.isArray(reminders.value)) return []
   let filtered = reminders.value
-  if (filterType.value === 'active') filtered = filtered.filter(r => !r.completed)
-  else if (filterType.value === 'completed') filtered = filtered.filter(r => r.completed)
+  if (filterType.value === 'active') filtered = filtered.filter(r => r && !r.completed)
+  else if (filterType.value === 'completed') filtered = filtered.filter(r => r && r.completed)
   return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })
 
-const activeRemindersCount = computed(() => reminders.value.filter(r => !r.completed).length)
-const completedRemindersCount = computed(() => reminders.value.filter(r => r.completed).length)
+const activeRemindersCount = computed(() => {
+  if (!Array.isArray(reminders.value)) return 0
+  return reminders.value.filter(r => r && !r.completed).length
+})
+
+const completedRemindersCount = computed(() => {
+  if (!Array.isArray(reminders.value)) return 0
+  return reminders.value.filter(r => r && r.completed).length
+})
 
 const viewTitle = computed(() => {
   const titles = { today: 'Today', upcoming: 'Upcoming', all: 'All entries' }
@@ -420,6 +432,7 @@ const changeView = async (view, forceRefresh = false) => {
     let filter = null
     if (view === 'today') filter = 'today'
     else if (view === 'upcoming') filter = 'upcoming'
+    else if (view === 'all') filter = 'all'
     
     const result = forceRefresh 
       ? await refreshReminders(filter)
@@ -427,9 +440,11 @@ const changeView = async (view, forceRefresh = false) => {
     
     if (!result.success) {
       console.error('Failed to load view:', result.error)
+      showToast(result.error || 'Failed to load reminders', 'error', '!')
     }
   } catch (error) {
     console.error('Error loading view:', error)
+    showToast('Failed to load reminders. Please try again.', 'error', '!')
   } finally {
     viewLoading.value = false
   }
@@ -579,16 +594,6 @@ const setDefaultDateTime = () => {
   }
 }
 
-const getNotificationIcon = (mode) => {
-  const icons = { email: '📧', sms: '📱', both: '💌', browser: '🔔' }
-  return icons[mode] || '🔔'
-}
-
-const getNotificationLabel = (mode) => {
-  const labels = { email: 'Email', sms: 'SMS', both: 'Both', browser: 'Browser' }
-  return labels[mode] || 'Browser'
-}
-
 const toggleTheme = () => {
   document.documentElement.classList.toggle('dark')
 }
@@ -621,10 +626,6 @@ onMounted(async () => {
       await changeView(currentView.value, true)
     }
   }, 60000)
-})
-
-onActivated(async () => {
-  // Optional: refresh when tab becomes active
 })
 
 onBeforeUnmount(() => {
@@ -662,6 +663,37 @@ onBeforeUnmount(() => {
   background: var(--paper);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: var(--ink);
+}
+
+/* ===== Loading State ===== */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--line);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: var(--ink-soft);
+  font-size: 14px;
 }
 
 /* ===== Sidebar ===== */
